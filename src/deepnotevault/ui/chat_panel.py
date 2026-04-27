@@ -144,3 +144,20 @@ class ChatPanel(QWidget):
     def _scroll_to_bottom(self) -> None:
         scrollbar = self._scroll_area.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def clear(self) -> None:
+        """Remove all messages and restore the welcome screen."""
+        while self._messages_layout.count():
+            item = self._messages_layout.takeAt(0)
+            if item.widget():
+                item.widget().setParent(None)
+                item.widget().deleteLater()
+        self._bubbles.clear()
+
+        self._welcome = QLabel(
+            "Upload documents and ask questions about them.\n"
+            "Your data stays 100% local."
+        )
+        self._welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._welcome.setStyleSheet("color: #6c757d; padding: 40px;")
+        self._messages_layout.addWidget(self._welcome)
