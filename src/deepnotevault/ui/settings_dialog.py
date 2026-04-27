@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QHBoxLayout,
@@ -89,10 +90,8 @@ class SettingsDialog(QDialog):
     def _test_connection(self) -> None:
         client = OllamaClient(base_url=self._url_input.text())
         if client.is_healthy():
-            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self, "Success", "Connected to Ollama!")
         else:
-            from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Error", "Cannot connect to Ollama")
 
     def get_config(self) -> AppConfig:

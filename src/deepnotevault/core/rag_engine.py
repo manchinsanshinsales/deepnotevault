@@ -7,6 +7,7 @@ Ported from vaultai-backend/app/rag/engine.py with the following changes:
 - Configurable via AppConfig instead of server settings
 """
 
+import logging
 from pathlib import Path
 
 from llama_index.core import (
@@ -22,7 +23,9 @@ import chromadb
 
 from deepnotevault.config import AppConfig
 from deepnotevault.constants import CHROMA_DIR
-from deepnotevault.core.document_processor import load_documents
+from deepnotevault.core.document_processor import load_documents, chunk_documents
+
+logger = logging.getLogger(__name__)
 
 
 def configure_llama(config: AppConfig) -> None:
@@ -46,7 +49,7 @@ def _get_chroma_collection(
     notebook_id: str, persist_dir: Path = CHROMA_DIR
 ) -> tuple[chromadb.PersistentClient, chromadb.Collection]:
     """Get or create a Chroma collection for a notebook."""
-    persist_dir.mkdir(parents=True, exist_ok=True)
+    persist_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     client = chromadb.PersistentClient(path=str(persist_dir))
     collection_name = f"notebook_{notebook_id.replace('-', '_')}"
     return client, client.get_or_create_collection(collection_name)
@@ -58,18 +61,22 @@ def index_file(notebook_id: str, file_path: str, config: AppConfig) -> int:
     Returns the number of chunks indexed.
     """
     configure_llama(config)
+    logger.info("Indexing file '%s' into notebook %s", file_path, notebook_id)
 
     _client, collection = _get_chroma_collection(notebook_id)
     vector_store = ChromaVectorStore(chroma_collection=collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
     documents = load_documents(file_path)
-    _index = VectorStoreIndex.from_documents(
-        documents,
+    nodes = chunk_documents(documents, config.chunk_size, config.chunk_overlap)
+
+    VectorStoreIndex(
+        nodes,
         storage_context=storage_context,
         show_progress=False,
     )
-    return len(documents)
+    logger.info("Indexed %d chunks from '%s'", len(nodes), file_path)
+    return len(nodes)
 
 
 def query_notebook(notebook_id: str, question: str, config: AppConfig) -> dict:
@@ -78,6 +85,7 @@ def query_notebook(notebook_id: str, question: str, config: AppConfig) -> dict:
     Returns {"answer": str, "sources": list[dict]}
     """
     configure_llama(config)
+    logger.info("Querying notebook %s: %r", notebook_id, question)
 
     _client, collection = _get_chroma_collection(notebook_id)
     if collection.count() == 0:
@@ -120,5 +128,8 @@ def delete_notebook_index(notebook_id: str) -> None:
     collection_name = f"notebook_{notebook_id.replace('-', '_')}"
     try:
         client.delete_collection(collection_name)
+        logger.info("Deleted Chroma collection for notebook %s", notebook_id)
     except Exception:
-        pass
+        logger.warning(
+            "Could not delete Chroma collection for notebook %s", notebook_id, exc_info=True
+        )

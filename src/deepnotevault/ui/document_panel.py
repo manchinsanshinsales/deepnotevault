@@ -164,3 +164,10 @@ class DocumentPanel(QWidget):
     def get_documents(self) -> list[Document]:
         """Return all documents in this panel."""
         return list(self._documents)
+
+    def clear(self) -> None:
+        """Remove all documents from the panel."""
+        self._documents.clear()
+        self._doc_list.clear()
+        self._summarize_btn.setEnabled(False)
+        self._delete_btn.setEnabled(False)

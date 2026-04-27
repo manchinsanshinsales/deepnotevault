@@ -1,9 +1,13 @@
 """Ollama HTTP client for health checks, model listing, and generation."""
 
+import json
+import logging
 from dataclasses import dataclass
 from typing import Iterator
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from deepnotevault.constants import DEFAULT_OLLAMA_URL
 
@@ -100,8 +104,6 @@ class OllamaClient:
                 for line in resp.iter_lines():
                     if not line:
                         continue
-                    import json
-
                     data = json.loads(line)
                     token = data.get("response", "")
                     if token:

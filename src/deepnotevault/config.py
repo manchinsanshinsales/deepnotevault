@@ -27,6 +27,15 @@ class AppConfig:
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP
     similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K
 
+    def __post_init__(self) -> None:
+        if self.chunk_overlap >= self.chunk_size:
+            raise ValueError(
+                f"chunk_overlap ({self.chunk_overlap}) must be less than "
+                f"chunk_size ({self.chunk_size})"
+            )
+        if self.similarity_top_k < 1:
+            raise ValueError("similarity_top_k must be at least 1")
+
 
 def load_config(path: Path = CONFIG_FILE) -> AppConfig:
     """Load config from JSON file. Returns defaults if file doesn't exist."""

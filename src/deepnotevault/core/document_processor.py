@@ -19,9 +19,11 @@ class UnsupportedFileError(Exception):
 
 def validate_file(file_path: str) -> Path:
     """Validate that the file exists and has a supported extension."""
-    path = Path(file_path)
+    path = Path(file_path).resolve()
     if not path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
+    if not path.is_file():
+        raise ValueError(f"Path is not a file: {file_path}")
     if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise UnsupportedFileError(
             f"Unsupported file type: {path.suffix}. "
