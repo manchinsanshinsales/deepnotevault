@@ -1,10 +1,12 @@
 """Document loading, parsing, and chunking pipeline."""
 
-from pathlib import Path
+from __future__ import annotations
 
-from llama_index.core import SimpleDirectoryReader
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.schema import Document as LlamaDocument
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from llama_index.core.schema import Document as LlamaDocument
 
 from deepnotevault.constants import (
     DEFAULT_CHUNK_OVERLAP,
@@ -34,6 +36,8 @@ def validate_file(file_path: str) -> Path:
 
 def load_documents(file_path: str) -> list[LlamaDocument]:
     """Load a file and return LlamaIndex Document objects."""
+    from llama_index.core import SimpleDirectoryReader
+
     path = validate_file(file_path)
     reader = SimpleDirectoryReader(input_files=[str(path)])
     return reader.load_data()
@@ -45,6 +49,8 @@ def chunk_documents(
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list:
     """Split documents into chunks (nodes) for embedding."""
+    from llama_index.core.node_parser import SentenceSplitter
+
     splitter = SentenceSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
